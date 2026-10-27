@@ -1633,10 +1633,6 @@ HTML_TEMPLATE = r"""
                 <span id="patchLabelNav">แพทช์: กำลังเช็ค...</span>
                 <span id="patchBadgeNav" style="display:none; background:#ef4444; color:#fff; font-size:10px; font-weight:700; padding:2px 7px; border-radius:10px; margin-left:4px; animation: pulseBadge 1.5s infinite;">NEW</span>
             </button>
-            <button type="button" id="soundToggleBtn" class="btn-sound-toggle" onclick="toggleSoundFeedback()">
-                <span id="soundIcon">🔊</span>
-                <span id="soundLabel">เสียงเอฟเฟกต์: เปิด</span>
-            </button>
         </div>
 
         <!-- Header -->
@@ -2219,9 +2215,8 @@ HTML_TEMPLATE = r"""
         let lastTaskData = null;
         let detectedClipboardUrl = "";
 
-        // Web Audio API Synthesizer (Instant SFX with zero external audio assets)
+        // Audio context for media playback visualization
         let audioCtx = null;
-        let soundFeedbackEnabled = true;
 
         function getAudioContext() {
             if (!audioCtx) {
@@ -2234,57 +2229,6 @@ HTML_TEMPLATE = r"""
                 audioCtx.resume();
             }
             return audioCtx;
-        }
-
-        function playCyberClick() {
-            if (!soundFeedbackEnabled) return;
-            try {
-                const ctx = getAudioContext();
-                if (!ctx) return;
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                const now = ctx.currentTime;
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(560, now);
-                osc.frequency.exponentialRampToValueAtTime(240, now + 0.05);
-                gain.gain.setValueAtTime(0.15, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                osc.start(now);
-                osc.stop(now + 0.05);
-            } catch (e) {}
-        }
-
-        function playSuccessChime() {
-            if (!soundFeedbackEnabled) return;
-            try {
-                const ctx = getAudioContext();
-                if (!ctx) return;
-                const freqs = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
-                freqs.forEach((freq, idx) => {
-                    const osc = ctx.createOscillator();
-                    const gain = ctx.createGain();
-                    const startTime = ctx.currentTime + (idx * 0.07);
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(freq, startTime);
-                    gain.gain.setValueAtTime(0.12, startTime);
-                    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.45);
-                    osc.connect(gain);
-                    gain.connect(ctx.destination);
-                    osc.start(startTime);
-                    osc.stop(startTime + 0.45);
-                });
-            } catch (e) {}
-        }
-
-        function toggleSoundFeedback() {
-            soundFeedbackEnabled = !soundFeedbackEnabled;
-            document.getElementById('soundIcon').innerText = soundFeedbackEnabled ? "🔊" : "🔇";
-            document.getElementById('soundLabel').innerText = soundFeedbackEnabled ? "เสียงเอฟเฟกต์: เปิด" : "เสียงเอฟเฟกต์: ปิด";
-            if (soundFeedbackEnabled) {
-                playCyberClick();
-            }
         }
 
         // Custom modal alerts (prevent native 127.0.0.1:5050 says)
@@ -2363,7 +2307,6 @@ HTML_TEMPLATE = r"""
         }
 
         async function openUpdateModal() {
-            playCyberClick();
             document.getElementById('updateModal').style.display = 'flex';
             document.getElementById('updateStatusText').innerHTML = "🔍 กำลังตรวจสอบแพทช์ล่าสุดจากเซิร์ฟเวอร์...";
             document.getElementById('updateProgressWrapper').style.display = 'none';
@@ -2398,7 +2341,6 @@ HTML_TEMPLATE = r"""
         }
 
         async function doUpdateEngine() {
-            playCyberClick();
             const btn = document.getElementById('btnStartUpdate');
             const statusText = document.getElementById('updateStatusText');
             const pWrap = document.getElementById('updateProgressWrapper');
@@ -2416,7 +2358,6 @@ HTML_TEMPLATE = r"""
                 const data = await res.json();
                 pBar.style.width = '100%';
                 if (data.ok) {
-                    playSuccessChime();
                     statusText.innerHTML = `<span style="color:#6ee7b7; font-weight:700;">✅ ปัจจุบันเป็นแพทช์ล่าสุดแล้ว (${data.new_version}) ไม่ต้องทำการติดตั้ง</span>`;
                     document.getElementById('modalYtdlpVer').innerHTML = `• <b>เวอร์ชันแพทช์เอนจิ้นปัจจุบัน:</b> ${data.new_version} (ล่าสุด)`;
                     btn.disabled = true;
@@ -2506,7 +2447,6 @@ HTML_TEMPLATE = r"""
 
         function useDetectedClipboard() {
             if (detectedClipboardUrl) {
-                playCyberClick();
                 document.getElementById('urlInput').value = detectedClipboardUrl;
                 document.getElementById('clipboardBanner').style.display = 'none';
                 const unsupported = checkUnsupportedUrl(detectedClipboardUrl);
@@ -2520,7 +2460,6 @@ HTML_TEMPLATE = r"""
         setTimeout(checkClipboardForUrl, 1000);
 
         async function pasteClipboard() {
-            playCyberClick();
             try {
                 const text = await navigator.clipboard.readText();
                 if (text) {
@@ -2537,14 +2476,12 @@ HTML_TEMPLATE = r"""
         }
 
         function setSample(url) {
-            playCyberClick();
             document.getElementById('urlInput').value = url;
             document.getElementById('clipboardBanner').style.display = 'none';
         }
 
         // Format switch handler
         function onFormatChanged(fmt) {
-            playCyberClick();
             const fxBox = document.getElementById('fxStudioBox');
             if (fmt === 'mp3' || fmt === 'm4r') {
                 fxBox.style.display = 'block';
@@ -2577,7 +2514,6 @@ HTML_TEMPLATE = r"""
         });
 
         function clearUrlInput() {
-            playCyberClick();
             const input = document.getElementById('urlInput');
             input.value = "";
             const clearBtn = document.getElementById('clearUrlBtn');
@@ -2592,7 +2528,6 @@ HTML_TEMPLATE = r"""
         });
 
         function switchMode(mode) {
-            playCyberClick();
             const tabSingle = document.getElementById('tabSingle');
             const tabBatch = document.getElementById('tabBatch');
             const secSingle = document.getElementById('singleModeSection');
@@ -2635,7 +2570,6 @@ HTML_TEMPLATE = r"""
         }
 
         async function searchSongs(query) {
-            playCyberClick();
             const resultsBox = document.getElementById('searchResultsBox');
             const resultsList = document.getElementById('searchResultsList');
             resultsBox.style.display = 'block';
@@ -2683,7 +2617,6 @@ HTML_TEMPLATE = r"""
         }
 
         function selectSearchResult(url) {
-            playCyberClick();
             document.getElementById('urlInput').value = url;
             const clearBtn = document.getElementById('clearUrlBtn');
             if (clearBtn) clearBtn.style.display = 'flex';
@@ -2714,8 +2647,6 @@ HTML_TEMPLATE = r"""
                 alert("เพื่อความเสถียรสูงสุดของระบบ กรุณาดาวน์โหลดครั้งละไม่เกิน 5 ลิงก์ครับ (หากต้องการโหลดคลิปยาวหลายสิบคลิป แนะนำใช้โปรแกรมคอมพิวเตอร์ Windows Desktop Pro)");
                 return;
             }
-
-            playCyberClick();
             isBatchRunning = true;
             const format = document.querySelector('input[name="format"]:checked').value;
             const fxEl = document.querySelector('input[name="audio_fx"]:checked');
@@ -2812,8 +2743,6 @@ HTML_TEMPLATE = r"""
                 counterEl.innerText = `${i + 1} / ${rawUrls.length} เพลง`;
                 await new Promise(r => setTimeout(r, 1000));
             }
-
-            playSuccessChime();
             btn.disabled = false;
             btn.innerHTML = "🎉 คิวดาวน์โหลดเสร็จสิ้นทั้งหมดแล้ว!";
             setTimeout(() => {
@@ -2827,7 +2756,6 @@ HTML_TEMPLATE = r"""
         let visualizerAnimId = null;
 
         function toggleTimeCut() {
-            playCyberClick();
             const enabled = document.getElementById('enableTimeCut').checked;
             document.getElementById('timeInputsRow').style.display = enabled ? 'grid' : 'none';
             document.getElementById('timeHint').style.display = enabled ? 'block' : 'none';
@@ -2942,7 +2870,6 @@ HTML_TEMPLATE = r"""
 
         // Start download flow
         async function startDownload() {
-            playCyberClick();
             const url = document.getElementById('urlInput').value.trim();
             if (!url) {
                 alert("กรุณาวางลิงก์ที่ต้องการดาวน์โหลดก่อนครับ");
@@ -3040,7 +2967,6 @@ HTML_TEMPLATE = r"""
                     } else if (task.status === 'finished') {
                         lastTaskData = task;
                         stopVisualizerPulse();
-                        playSuccessChime();
 
                         document.getElementById('progressBox').style.display = "none";
                         document.getElementById('resultBox').style.display = "block";
@@ -3114,7 +3040,6 @@ HTML_TEMPLATE = r"""
         let qrCountdownInterval = null;
 
         function openQrModal() {
-            playCyberClick();
             if (!lastTaskData || !lastTaskData.filename) {
                 alert("ไม่พบข้อมูลไฟล์สำหรับสร้าง QR Code ครับ");
                 return;
@@ -3162,7 +3087,6 @@ HTML_TEMPLATE = r"""
         }
 
         async function copyMobileUrl() {
-            playCyberClick();
             if (lastTaskData && lastTaskData.mobile_download_url) {
                 try {
                     await navigator.clipboard.writeText(lastTaskData.mobile_download_url);
@@ -3175,7 +3099,6 @@ HTML_TEMPLATE = r"""
 
         // HD Thumbnail Downloader
         function downloadThumbnailHD() {
-            playCyberClick();
             if (!lastTaskData || !lastTaskData.thumbnail_url) {
                 alert("ไม่พบรูปหน้าปกสำหรับดาวน์โหลดครับ");
                 return;
