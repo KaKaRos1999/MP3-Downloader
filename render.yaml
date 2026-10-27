@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: mp3-downloader
+    runtime: docker
+    plan: free
+    region: singapore
+    healthCheckPath: /
+    envVars:
+      - key: HEADLESS
+        value: "1"
+      - key: CUSTOM_DNS
+        value: "0"
+      - key: ZERO_STORAGE
+        value: "1"
+      - key: APP_DOWNLOAD_URL
+        value: https://github.com/KaKaRos1999/MP3-Downloader/releases/latest/download/MP3_Downloader.exe

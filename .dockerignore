@@ -1,0 +1,9 @@
+*
+!Dockerfile
+!requirements.txt
+!server.py
+!updater.py
+!custom_dns.py
+!patch_channel.json
+!app_icon.ico
+!app_icon.png

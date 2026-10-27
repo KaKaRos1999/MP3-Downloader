@@ -1,0 +1,7 @@
+{
+  "enabled": true,
+  "latest_version": "2026.10.27",
+  "latest_patch": "v2.10.27",
+  "release_notes": "⚡ ปล่อยแพทช์ใหม่ v2.10.27: ปรับปรุงเอนจิ้นแก้ทางอัลกอริทึม YouTube & TikTok ล่าสุด และระบบ Google DNS ทะลวงบล็อก ISP",
+  "download_url": "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.tar.gz"
+}
