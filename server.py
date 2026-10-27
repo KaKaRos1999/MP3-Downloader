@@ -3604,10 +3604,16 @@ def start_download():
 def download_worker(task_id, url, fmt, audio_fx="none", start_time="", end_time="", client_ip=""):
     try:
         _do_download_work(task_id, url, fmt, audio_fx, start_time, end_time)
+    except Exception as error:
+        tasks[task_id]["error"] = str(error)
+        tasks[task_id]["status"] = "error"
     finally:
         if client_ip:
             flood_protector.unregister_task(client_ip, task_id)
         if task_id in tasks:
+            if tasks[task_id]["status"] not in ("finished", "error"):
+                tasks[task_id]["error"] = tasks[task_id].get("error") or "ดาวน์โหลดไม่สำเร็จ กรุณาลองใหม่"
+                tasks[task_id]["status"] = "error"
             tasks[task_id]["finished_at"] = time.time()
 
 def _do_download_work(task_id, url, fmt, audio_fx="none", start_time="", end_time=""):
@@ -3680,7 +3686,7 @@ def _do_download_work(task_id, url, fmt, audio_fx="none", start_time="", end_tim
             'no_warnings': True,
             'keepvideo': False,
             'socket_timeout': 25,
-            'retries': 10,
+            'retries': 2,
             'concurrent_fragment_downloads': 8,
             'buffersize': 1024 * 1024 * 4,
             'http_chunk_size': 10485760,
@@ -3689,7 +3695,7 @@ def _do_download_work(task_id, url, fmt, audio_fx="none", start_time="", end_tim
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                 'Accept-Language': 'en-US,en;q=0.9,th;q=0.8',
             },
-            'extractor_retries': 5,
+            'extractor_retries': 1,
         }
 
         # Set FFmpeg location for yt-dlp
@@ -3880,6 +3886,8 @@ def _do_download_work(task_id, url, fmt, audio_fx="none", start_time="", end_tim
     except Exception as e:
         # Fallback: ลองดาวน์โหลดลิงก์ไฟล์ตรง (Direct Media File / Web Stream)
         try:
+            if any(marker in str(e).lower() for marker in ("not a bot", "confirm your age", "sign in", "private video", "drm")):
+                raise e
             import urllib.request
             import urllib.parse
             req = urllib.request.Request(url, headers={
@@ -3950,7 +3958,12 @@ def _do_download_work(task_id, url, fmt, audio_fx="none", start_time="", end_tim
 
         raw_err = str(e)
         clean_err = re.sub(r'\x1b\[[0-9;]*m', '', raw_err)
-        if 'pornhub' in url.lower() and ('410' in clean_err or 'gone' in clean_err.lower()):
+        if 'not a bot' in clean_err.lower():
+            tasks[task_id]["error"] = (
+                "YouTube ขอให้ยืนยันว่าไม่ใช่บอต จึงดาวน์โหลดจากเซิร์ฟเวอร์นี้ไม่ได้ในขณะนี้ "
+                "กรุณาใช้โปรแกรม Windows จากปุ่มดาวน์โหลดโปรแกรม หรือลองลิงก์จากเว็บไซต์อื่น"
+            )
+        elif 'pornhub' in url.lower() and ('410' in clean_err or 'gone' in clean_err.lower()):
             tasks[task_id]["error"] = (
                 "⚠️ เว็บไซต์ PornHub บล็อกคำขอดาวน์โหลดภายนอก (HTTP Error 410: Gone)\n\n"
                 "📌 สาเหตุที่ในเว็บเบราว์เซอร์ยังดูได้ แต่โปรแกรมดาวน์โหลดไม่ได้:\n"
@@ -4007,6 +4020,7 @@ def _do_download_work(task_id, url, fmt, audio_fx="none", start_time="", end_tim
             )
         else:
             tasks[task_id]["error"] = clean_err
+        tasks[task_id]["status"] = "error"
 
 
 if __name__ == '__main__':
